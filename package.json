@@ -1,0 +1,16 @@
+{
+  "name": "o365node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "nodemon": "nodemon app"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "express": "^4.16.2",
+    "nodemon": "^1.12.1"
+  }
+}
