@@ -1,14 +1,21 @@
-const express = require('express')
-const app = express()
-const auth = require('./auth')
-const microsoftGraph = require("@microsoft/microsoft-graph-client");
+const express = require('express'),
+  app = express(),
+  auth = require('./auth'),
+  reload = require('reload')
+  microsoftGraph = require("@microsoft/microsoft-graph-client");
+  
+const reloadTag =  '<script src="/reload/reload.js"></script>';  
 
 const c = console.log
 
-function htmlContent (res) {
+////////////////////////////////////////////
+
+function htmlContent(res) {
   let htmlContentType = ['Content-Type', 'text/html']
   res.header.apply(htmlContentType)
 }
+
+/////////////////////////////////////////
 
 function getUserEmail(token, callback) {
   // Create a Graph client
@@ -31,6 +38,22 @@ function getUserEmail(token, callback) {
     });
 }
 
+function tokenReceived(response, error, token) {
+  if (error) {
+    console.log('Access token error: ', error.message);
+  } else {
+    getUserEmail(token.token.access_token, function(error, email) {
+      if (error) {
+        console.log('getUserEmail returned an error: ' + error);
+      } else if (email) {
+        c(email)
+      }
+    });
+  }
+}
+
+/////////////////////////////////////////
+
 
 app.get('/', function (req, res) {
   htmlContent(res)
@@ -38,12 +61,13 @@ app.get('/', function (req, res) {
 })
 
 app.get('/authorize', (req, res) => {
-  htmlContent(res)
-  res.send(`<h1>authorize page - code is: ${req.query.code}</h1>`)
-  console.log(req.query.code)
+  auth.getTokenFromCode(req.query.code, tokenReceived, res)
 })
 
 
+//////////////////////////////////////////
+
+reload(app)
 
 const port = 8080
 app.listen(port, () => console.log('Server running on localhost:' + port))

@@ -1,7 +1,7 @@
 var credentials = {
     client: {
         id: '9919e965-ffb2-4b44-97fc-e855c7f28c69',
-        secret: 'YOUR APP PASSWORD HERE',
+        secret: 'dxavkHFGQ491_!^amLQF88~',
     },
     auth: {
         tokenHost: 'https://login.microsoftonline.com',
@@ -9,6 +9,8 @@ var credentials = {
         tokenPath: 'common/oauth2/v2.0/token'
     }
 };
+
+/////CONFIG
 
 var oauth2 = require('simple-oauth2').create(credentials);
 
@@ -26,7 +28,6 @@ function getAuthUrl() {
     return returnVal;
 }
 
-//////////////////////
 
 function getTokenFromCode(auth_code, callback, response) {
     var token;
