@@ -1,21 +1,15 @@
 const express = require('express'),
   app = express(),
-  auth = require('./auth'),
-  reload = require('reload')
+  auth = require('./App/Middleware/auth'),
+  reload = require('reload'),
+  cookieParser = require('cookie-parser'),
+  cors = require('cors'),
   microsoftGraph = require("@microsoft/microsoft-graph-client");
+
+app.use(cookieParser())
+app.use(cors())
   
-const reloadTag =  '<script src="/reload/reload.js"></script>';  
-
 const c = console.log
-
-////////////////////////////////////////////
-
-function htmlContent(res) {
-  let htmlContentType = ['Content-Type', 'text/html']
-  res.header.apply(htmlContentType)
-}
-
-/////////////////////////////////////////
 
 function getUserEmail(token, callback) {
   // Create a Graph client
@@ -26,7 +20,6 @@ function getUserEmail(token, callback) {
     }
   });
 
-  // Get the Graph /Me endpoint to get user email address
   client
     .api('/me')
     .get((err, res) => {
@@ -38,36 +31,72 @@ function getUserEmail(token, callback) {
     });
 }
 
-function tokenReceived(response, error, token) {
+function getMyEmail(token, res) {
+
+  var client = microsoftGraph.Client.init({
+    authProvider: (done) => {
+      // Just return the token
+      done(null, token);
+    }
+  });
+
+  client
+  .api('/me/mailfolders/inbox/messages')
+  .top(10)
+  .select('subject,from,receivedDateTime,isRead')
+  .orderby('receivedDateTime DESC')
+  .get((error, response) => {
+    if (error) {
+      console.log(err);
+    } else {
+      console.log(response)
+    }
+  })
+}
+
+function tokenReceived(res, error, token) {
   if (error) {
     console.log('Access token error: ', error.message);
   } else {
-    getUserEmail(token.token.access_token, function(error, email) {
-      if (error) {
-        console.log('getUserEmail returned an error: ' + error);
-      } else if (email) {
-        c(email)
-      }
-    });
+    res.cookie('o365AccessToken', token.token.access_token, {expire: new Date() + 4000})
+    res.cookie('o365RefreshToken', token.token.refresh_token, {expire: new Date() + 4000})
+    res.cookie('o365TokenExpires', token.token.expires_at.getTime()).send('initial cookies')
+    
   }
 }
 
-/////////////////////////////////////////
-
-
 app.get('/', function (req, res) {
-  htmlContent(res)
-  res.send(`<a href='${auth.getAuthUrl()}'>Sign in Here</a>`)
+  res.redirect(auth.getAuthUrl());
 })
+
+app.get('/main', function (req, res) {
+  c(req.cookies)
+  res.send('<a href="/mail">renew cookies</a>')
+})
+
 
 app.get('/authorize', (req, res) => {
   auth.getTokenFromCode(req.query.code, tokenReceived, res)
 })
 
+app.get('/mail', (req, res) => {
+  c(req.cookies)
+  if (true ) {
+    c('token expired')
+    let refreshToken = req.cookies.o365RefreshToken
+    auth.refreshAccessToken(refreshToken, (err, newToken) => {
+      if (err) console.log('Error: '+err) 
+      else if (newToken) {
+        res.cookie('o365AccessToken', newToken.token.access_token, {expire: new Date() + 4000})
+        res.cookie('o365RefreshToken', newToken.token.refresh_token, {expire: new Date() + 4000})
+        res.cookie('o365TokenExpires', newToken.token.expires_at.getTime(), {expire: new Date() + 4000}).send('new cookies')        
+      }
+    })
+  }
+})
 
-//////////////////////////////////////////
+
+
 
 reload(app)
-
-const port = 8080
-app.listen(port, () => console.log('Server running on localhost:' + port))
+app.listen(8080, console.log('Server running on localhost:8080'))
