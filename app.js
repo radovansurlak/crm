@@ -6,18 +6,23 @@ const express = require('express'),
   cors = require('cors'),
   session = require('express-session'),
   helmet = require('helmet'),
+  nunjucks = require('nunjucks'),
   microsoftGraph = require("@microsoft/microsoft-graph-client");
 
 const c = console.log
 
+nunjucks.configure('App/Views', {
+  autoescape: true,
+  express: app
+});
 
-function authorizeSession (req, res, next) { // Session authorization
-  if (req.method === 'GET') { 
-    if (!req.session.o365AccessToken && req.path!=='/authorize') res.redirect(auth.getAuthUrl());
+function authorizeSession(req, res, next) { // Session authorization
+  if (req.method === 'GET') {
+    if (!req.session.o365AccessToken && req.path !== '/authorize') res.redirect(auth.getAuthUrl());
     if (new Date(parseFloat(req.session.o365TokenExpires)) <= new Date()) {
       let refreshToken = req.session.o365RefreshToken
       auth.refreshAccessToken(refreshToken, (err, newToken) => {
-        if (err) console.log('Error: '+err) 
+        if (err) console.log('Error: ' + err)
         else if (newToken) {
           req.session.o365AccessToken = newToken.token.access_token
           req.session.o365RefreshToken = newToken.token.refresh_token
@@ -39,7 +44,10 @@ app.use(session({
   httpOnly: false,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, expires: 1000 * 60 * 60 * 24 } // Cookie expiration date set to 24H
+  cookie: {
+    secure: false,
+    expires: 1000 * 60 * 60 * 24
+  } // Cookie expiration date set to 24H
 }))
 app.use(authorizeSession)
 
@@ -72,17 +80,17 @@ function getMyEmail(token, res) {
   });
 
   client
-  .api('/me/mailfolders/inbox/messages')
-  .top(10)
-  .select('subject,from,receivedDateTime,isRead')
-  .orderby('receivedDateTime DESC')
-  .get((error, response) => {
-    if (error) {
-      console.log(err);
-    } else {
-      console.log(response)
-    }
-  })
+    .api('/me/mailfolders/inbox/messages')
+    .top(10)
+    .select('subject,from,receivedDateTime,isRead')
+    .orderby('receivedDateTime DESC')
+    .get((error, response) => {
+      if (error) {
+        console.log(err);
+      } else {
+        console.log(response)
+      }
+    })
 }
 
 function tokenReceived(req, error, token, res) {
@@ -95,13 +103,18 @@ function tokenReceived(req, error, token, res) {
     res.redirect('/main')
   }
 }
+
+/////////ROUTES
+
+
 app.get('/', function (req, res) {
 
 })
 
 app.get('/main', function (req, res) {
-  c(new Date(parseFloat(req.session.o365TokenExpires)))
-  res.send('<a href="/mail">renew cookies</a>')
+  res.render('index.html', {
+    title: "main page"
+  })
 })
 
 app.get('/authorize', (req, res) => {
@@ -109,7 +122,11 @@ app.get('/authorize', (req, res) => {
 })
 
 app.get('/logout', (req, res) => {
+
   req.session.destroy()
+  res.render('index.html', {
+    title: "logout"
+  })
 })
 
 app.get('/mail', (req, res) => {
