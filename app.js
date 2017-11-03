@@ -10,17 +10,24 @@ const express = require('express'),
 
 const c = console.log
 
-// Session authorization
 
-function authorizeSession (req, res, next) {
+function authorizeSession (req, res, next) { // Session authorization
   if (req.method === 'GET') { 
     if (!req.session.o365AccessToken && req.path!=='/authorize') res.redirect(auth.getAuthUrl());
+    if (new Date(parseFloat(req.session.o365TokenExpires)) <= new Date()) {
+      let refreshToken = req.session.o365RefreshToken
+      auth.refreshAccessToken(refreshToken, (err, newToken) => {
+        if (err) console.log('Error: '+err) 
+        else if (newToken) {
+          req.session.o365AccessToken = newToken.token.access_token
+          req.session.o365RefreshToken = newToken.token.refresh_token
+          req.session.o365TokenExpires = newToken.token.expires_at.getTime()
+        }
+      })
+    }
   }
-  // keep executing the router middleware
-  next()
+  next() // keep executing the router middleware
 }
-
-
 
 app.use(cookieParser())
 app.use(helmet())
@@ -32,12 +39,9 @@ app.use(session({
   httpOnly: false,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, expires: 360000000 }
+  cookie: { secure: false, expires: 1000 * 60 * 60 * 24 } // Cookie expiration date set to 24H
 }))
 app.use(authorizeSession)
-
-
-
 
 function getUserEmail(token, callback) {
   // Create a Graph client
@@ -47,7 +51,6 @@ function getUserEmail(token, callback) {
       done(null, token);
     }
   });
-
   client
     .api('/me')
     .get((err, res) => {
@@ -89,25 +92,17 @@ function tokenReceived(req, error, token, res) {
     req.session.o365AccessToken = token.token.access_token
     req.session.o365RefreshToken = token.token.refresh_token
     req.session.o365TokenExpires = token.token.expires_at.getTime()
-    c(req)
     res.redirect('/main')
-    // res.cookie('o365AccessToken', token.token.access_token, {maxAge: cookieExpirationTime})
-    // res.cookie('o365RefreshToken', token.token.refresh_token, {maxAge: cookieExpirationTime})
-    // res.cookie('o365TokenExpires', token.token.expires_at.getTime(), {maxAge: cookieExpirationTime}).send('initial cookies')
-    
   }
 }
 app.get('/', function (req, res) {
-  // if (req.session.o365AccessToken) res.send('got sessions') 
-  // else res.redirect(auth.getAuthUrl());
-  // res.send('/')
+
 })
 
 app.get('/main', function (req, res) {
-  c(req.session)
+  c(new Date(parseFloat(req.session.o365TokenExpires)))
   res.send('<a href="/mail">renew cookies</a>')
 })
-
 
 app.get('/authorize', (req, res) => {
   auth.getTokenFromCode(req.query.code, tokenReceived, req, res)
@@ -118,19 +113,7 @@ app.get('/logout', (req, res) => {
 })
 
 app.get('/mail', (req, res) => {
-  c(req.cookies)
-  if (true ) {
-    c('token expired')
-    let refreshToken = req.cookies.o365RefreshToken
-    auth.refreshAccessToken(refreshToken, (err, newToken) => {
-      if (err) console.log('Error: '+err) 
-      else if (newToken) {
-        res.cookie('o365AccessToken', newToken.token.access_token, {maxAge: cookieExpirationTime})
-        res.cookie('o365RefreshToken', newToken.token.refresh_token, {maxAge: cookieExpirationTime})
-        res.cookie('o365TokenExpires', newToken.token.expires_at.getTime(), {maxAge: cookieExpirationTime}).send('new cookies')        
-      }
-    })
-  }
+
 })
 
 
