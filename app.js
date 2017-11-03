@@ -18,7 +18,10 @@ nunjucks.configure('App/Views', {
 
 function authorizeSession(req, res, next) { // Session authorization
   if (req.method === 'GET') {
-    if (!req.session.o365AccessToken && req.path !== '/authorize') res.redirect(auth.getAuthUrl());
+    if (!req.session.o365AccessToken && req.path !== '/authorize') {
+      res.redirect(auth.getAuthUrl());
+      return;  
+    } 
     if (new Date(parseFloat(req.session.o365TokenExpires)) <= new Date()) {
       let refreshToken = req.session.o365RefreshToken
       auth.refreshAccessToken(refreshToken, (err, newToken) => {
@@ -49,6 +52,7 @@ app.use(session({
     expires: 1000 * 60 * 60 * 24
   } // Cookie expiration date set to 24H
 }))
+
 app.use(authorizeSession)
 
 function getUserEmail(token, callback) {
