@@ -18,19 +18,20 @@
 
     <main id="app">
 
-        <test page-title='{{ title }}'></test>
+        <test page-title='{$ title $}'></test>
 
 
         <ul>
             {% for email in mails %}
             <li>
-                Subject: {{ email.subject }} <br>
-                From: {{ email.from.emailAddress.name}} <br>
+                Subject: {$ email.subject $} <br>
+                From: {$ email.from.emailAddress.name $} <br>
                 {% if email.isRead %}
                     Email was read
                 {% else %}
                     <b>Email wasn't read</b>
                 {% endif %}
+                
             </li>
             {% endfor %}
         </ul>
@@ -42,7 +43,7 @@
       Vue.component('test', {
         props: ['pageTitle'],
         template: 
-        '<div><h1> {{ title }} </h1></div>',
+        '<div><h1> {{ pageTitle }} </h1></div>',
         data() {
             return {
             }
@@ -51,7 +52,6 @@
 
     let app = new Vue({
         el: "#app",
-        delimiters: ["<%","%>"]
     })
 
 </script>

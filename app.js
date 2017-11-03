@@ -15,6 +15,14 @@ nunjucks.configure('App/Views', {
   autoescape: true,
   noCache: true,
   watch: true,
+  tags: {
+    blockStart: '{%',
+    blockEnd: '%}',
+    variableStart: '{$',
+    variableEnd: '$}',
+    commentStart: '{#',
+    commentEnd: '#}'
+  },
   express: app
 });
 
