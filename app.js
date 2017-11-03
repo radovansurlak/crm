@@ -74,7 +74,7 @@ function getUserEmail(token, callback) {
     });
 }
 
-function getMyEmail(token) {
+function getMyEmail(token, callback) {
 
   var client = microsoftGraph.Client.init({
     authProvider: (done) => {
@@ -92,7 +92,7 @@ function getMyEmail(token) {
       if (error) {
         console.log(err);
       } else {
-        return response
+        callback(response)
       }
     })
 }
@@ -135,11 +135,12 @@ app.get('/logout', (req, res) => {
 })
 
 app.get('/mail', (req, res) => {
-  c(getMyEmail(req.session.o365AccessToken))
-  res.render('email.html', {
-    title: "email",  
-    emails: getMyEmail(req.session.o365AccessToken)
+  getMyEmail(req.session.o365AccessToken, (emails) => {
+    res.render('index.html', {
+      title: emails.value[0].subject
+    })
   })
+  
 })
 
 
