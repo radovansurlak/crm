@@ -28,7 +28,7 @@ function getAuthUrl() {
     return returnVal;
 }
 
-function getTokenFromCode(auth_code, callback, response) {
+function getTokenFromCode(auth_code, callback, req, response) {
     var token;
     oauth2.authorizationCode.getToken({
         code: auth_code,
@@ -41,7 +41,7 @@ function getTokenFromCode(auth_code, callback, response) {
         } else {
             token = oauth2.accessToken.create(result);
             console.log('Token created: ', token.token);
-            callback(response, null, token);
+            callback(req, null, token, response);
         }
     });
 }
