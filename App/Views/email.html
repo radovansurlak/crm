@@ -5,15 +5,57 @@
     <meta charset="UTF-8">
     <title>Main page</title>
 </head>
+<style>
+    html {
+        font-family: sans-serif;
+    }
+    li {
+        margin: 1vw;
+    }
+</style>
 
 <body>
-    <h1>{{ title }}</h1>
-    <ul>
-        {% for email in emails %}
-        <li>{{ email }}</li>
-        {% endfor %}
-    </ul>
 
+    <main id="app">
+
+        <test page-title='{{ title }}'></test>
+
+
+        <ul>
+            {% for email in mails %}
+            <li>
+                Subject: {{ email.subject }} <br>
+                From: {{ email.from.emailAddress.name}} <br>
+                {% if email.isRead %}
+                    Email was read
+                {% else %}
+                    <b>Email wasn't read</b>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </main>
+
+<script src="https://unpkg.com/vue@2.5.2/dist/vue.js"></script>
+
+<script>
+      Vue.component('test', {
+        props: ['pageTitle'],
+        template: 
+        '<div><h1> {{ title }} </h1></div>',
+        data() {
+            return {
+            }
+        }
+    })
+
+    let app = new Vue({
+        el: "#app",
+        delimiters: ["<%","%>"]
+    })
+
+</script>
 </body>
-
 </html>
+
+

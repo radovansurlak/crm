@@ -13,6 +13,8 @@ const c = console.log
 
 nunjucks.configure('App/Views', {
   autoescape: true,
+  noCache: true,
+  watch: true,
   express: app
 });
 
@@ -104,7 +106,7 @@ function tokenReceived(req, error, token, res) {
     req.session.o365AccessToken = token.token.access_token
     req.session.o365RefreshToken = token.token.refresh_token
     req.session.o365TokenExpires = token.token.expires_at.getTime()
-    res.redirect('/main')
+    res.redirect('/mail')
   }
 }
 
@@ -136,8 +138,10 @@ app.get('/logout', (req, res) => {
 
 app.get('/mail', (req, res) => {
   getMyEmail(req.session.o365AccessToken, (emails) => {
-    res.render('index.html', {
-      title: emails.value[0].subject
+    c(emails)
+    res.render('email.html', {
+      title: 'emails',
+      mails: emails.value
     })
   })
   
